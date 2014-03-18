@@ -3,6 +3,8 @@ JChat
 
 Java chat application over sockets. 
 
+EXCLAIMER: It is still in beta and any bugs that are found and reported would be appreciated.
+
 How to use:
 
 1. Open server which is located under the "Test" directory as a Jar and then press start server after opening Jar.
