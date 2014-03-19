@@ -1,8 +1,7 @@
 JChat
 =====
 
-Java chat application over sockets. 
-
+Java chat application over sockets. Also includes a built in MP3 player.
 EXCLAIMER: It is still in beta and any bugs that are found and reported would be appreciated. Also, it is compiled
 in Java version 1.6 so that is the minimal JRE version required to run this application.
 
