@@ -36,12 +36,6 @@ public class ThreadHandler
                             ServerThread serverThread = new ServerThread(gui, serverSocket.accept(), server);
                             serverThreads.add(serverThread);
                             serverThread.start();
-                            
-                            
-                            //serverThreads.get(count).start();
-                            //System.out.println("Server Thread at: " + count + " successfully started.");
-                            //count++;
-                            
                         } catch (IOException ex) {
                             Logger.getLogger(ThreadHandler.class.getName()).log(Level.SEVERE, null, ex);
                         }

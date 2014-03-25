@@ -11,7 +11,6 @@ import java.awt.Color;
 import java.awt.Image;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
-import java.awt.event.ItemEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.*;
@@ -28,48 +27,36 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.DefaultCaret;
 public class GUI extends javax.swing.JFrame {
 
-    
+    //The Client instance
     Client client;
+    //File chooser for our MP3 file.
     JFileChooser fileChooser;
+    //MP3 player instance.
     MP3 mp3 = new MP3();
+    //Clients username
     String username;
+    //Determines if MP3 is playing music.
     private boolean musicPlaying = false;
-    public boolean connected = false;
+    //Determines if the client shlic boolean connected = false;ould receive notifications of messsages.
     private boolean getNotifications = false;
+    //Determines if the JFrame is floating.
     private boolean isFloating = false;
-    String ip;
-    File propFile = new File("clientproperties.properties");
-    final TrayIcon trayIcon = new TrayIcon(createImage("images/bulb.gif", "Tray Icon"),"JChat");
-    final SystemTray tray = SystemTray.getSystemTray();
-    Properties prop = new Properties();
-    DefaultListModel listModel = new DefaultListModel();
+    String ip = "";
+    File propFile;
+    public static final TrayIcon trayIcon = new TrayIcon(createImage("images/alien.gif", "Tray Icon"),"JChat");
+    public static final SystemTray tray = SystemTray.getSystemTray();
+    Properties prop;
+    DefaultListModel listModel;
     public GUI() {
+        listModel = new DefaultListModel();      
         initComponents();
+        extraWindowSetup();
+        setupPropertiesFile();
         ShutDownHook shutDownHook = new ShutDownHook();
-        Runtime.getRuntime().addShutdownHook(shutDownHook);
-        this.getContentPane().setBackground(Color.BLACK);
-        setLocationRelativeTo(null);
-        
-        System.out.println(listModel.capacity());
-        for(int i = 0; i < listModel.capacity(); i++)
-                listModel.add(i, "");
-        listModel.set(0, "All");
-        userList.setSelectedIndex(0);
-        DefaultCaret caret = (DefaultCaret)jTextArea1.getCaret();
-        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-        FileInputStream fileInput;
-        try {
-            propFile.createNewFile();
-            fileInput = new FileInputStream(propFile);
-            prop.load(fileInput);
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
+        Runtime.getRuntime().addShutdownHook(shutDownHook);           
         usernameField.setText(prop.getProperty("USERNAME"));
         hostField.setText(prop.getProperty("IP"));
+        client = new Client(this, ip);
         this.addWindowListener(new WindowListener() {
 
             @Override public void windowOpened(WindowEvent e) {}
@@ -77,11 +64,11 @@ public class GUI extends javax.swing.JFrame {
             {
                 try 
                 {
-                    if(connected)
+                    if(client.connected)
                     {
                         client.out.flush();
                         client.out.writeObject(new Message(Message.LOGOUT, username));
-                        connected = false;
+                        client.connected = false;
                     }  
                 } 
                 catch (IOException ex) 
@@ -97,15 +84,7 @@ public class GUI extends javax.swing.JFrame {
             @Override public void windowDeactivated(WindowEvent e) {
                 getNotifications = true;}
         });
-        try
-        {
-            tray.add(trayIcon);
-        }
-        catch(AWTException e)
-        {
-            System.out.println("System Tray was not present.");
-        }
-        jTextArea1.getDocument().addDocumentListener(new DocumentListener(){
+        messageTextArea.getDocument().addDocumentListener(new DocumentListener(){
             @Override
             public void changedUpdate(DocumentEvent e){
                 
@@ -130,12 +109,46 @@ public class GUI extends javax.swing.JFrame {
             return (new ImageIcon(imageURL, description)).getImage();
         }
     }
+    private void extraWindowSetup()
+    {
+        getContentPane().setBackground(Color.BLACK);
+        setLocationRelativeTo(null);
+        DefaultCaret caret = (DefaultCaret)messageTextArea.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        for(int i = 0; i < listModel.capacity(); i++)
+                listModel.add(i, "");
+        listModel.set(0, "All");
+        userList.setSelectedIndex(0);
+        try
+        {
+            tray.add(trayIcon);
+        }
+        catch(AWTException e)
+        {
+            System.out.println("System Tray was not present.");
+        }
+    }
+    private void setupPropertiesFile()
+    {
+        propFile = new File("clientproperties.properties");
+        prop = new Properties();
+        FileInputStream fileInput;
+        try {
+            propFile.createNewFile();
+            fileInput = new FileInputStream(propFile);
+            prop.load(fileInput);
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
     private class ShutDownHook extends Thread
     {
         @Override
         public void run()
         {
-            if(connected == true)
+            if(client.connected == true)
             {
                 try 
                 {
@@ -157,7 +170,7 @@ public class GUI extends javax.swing.JFrame {
     private void initComponents() {
 
         jScrollPane1 = new javax.swing.JScrollPane();
-        jTextArea1 = new javax.swing.JTextArea();
+        messageTextArea = new javax.swing.JTextArea();
         hostField = new javax.swing.JTextField();
         jLabel1 = new javax.swing.JLabel();
         discButton = new javax.swing.JButton();
@@ -178,11 +191,12 @@ public class GUI extends javax.swing.JFrame {
         setTitle("JClient");
         setBackground(new java.awt.Color(0, 0, 0));
 
-        jTextArea1.setEditable(false);
-        jTextArea1.setColumns(20);
-        jTextArea1.setRows(5);
-        jTextArea1.setOpaque(false);
-        jScrollPane1.setViewportView(jTextArea1);
+        messageTextArea.setEditable(false);
+        messageTextArea.setColumns(20);
+        messageTextArea.setLineWrap(true);
+        messageTextArea.setRows(5);
+        messageTextArea.setOpaque(false);
+        jScrollPane1.setViewportView(messageTextArea);
 
         jLabel1.setForeground(new java.awt.Color(255, 255, 0));
         jLabel1.setText("Host:");
@@ -387,36 +401,38 @@ public class GUI extends javax.swing.JFrame {
     }//GEN-LAST:event_messageFieldActionPerformed
 
     private void discButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_discButtonActionPerformed
-        try {
+        if(client.connected)
+        {
+            try {
             client.out.writeObject(new Message(Message.LOGOUT, username));
-            client.connected = false;
-            client = null;
-            connected = false;
-            listModel.clear();
+            client.closeClient();
             usernameField.setEditable(true);
-        } catch (IOException ex) {
+            } catch (IOException ex) {
             System.out.println("Issue closing client socket.");
+            }
         }
     }//GEN-LAST:event_discButtonActionPerformed
 
     private void connectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectButtonActionPerformed
-        if(connected == false)
+        if(!client.connected)
         {
-            ip = hostField.getText();
-            System.out.println(ip);
-            client = new Client(this, ip);
-            connected = true;
-            prop.setProperty("USERNAME", username);
-            prop.setProperty("IP", ip);
-            try {
-                FileOutputStream fos = new FileOutputStream(propFile);
-                prop.store(fos, "Client Properties");
-            } catch (FileNotFoundException ex) {
-                Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (IOException ex) {
-                Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            
+            client.ip = hostField.getText();
+            messageTextArea.append("Connecting to server..." + "\n");
+            client.startClient();
+            if(client.clientSocket.isConnected())
+            {
+                client.connected = true;
+                prop.setProperty("USERNAME", username);
+                prop.setProperty("IP", client.ip);
+                try {
+                    FileOutputStream fos = new FileOutputStream(propFile);
+                    prop.store(fos, "Client Properties");
+                } catch (FileNotFoundException ex) {
+                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (IOException ex) {
+                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } 
         }
     }//GEN-LAST:event_connectButtonActionPerformed
 
@@ -427,14 +443,14 @@ public class GUI extends javax.swing.JFrame {
     private void sendMessageButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendMessageButtonActionPerformed
        if(messageField.getText().equals("/float") && isFloating)
        {
-           jTextArea1.append("Float turned off.\n");
+           messageTextArea.append("Float turned off.\n");
            messageField.setText("");
            this.setAlwaysOnTop(false);
            isFloating = false;
        }
        else if(messageField.getText().equals("/float") && (isFloating == false))
        {
-           jTextArea1.append("Float turned on.\n");
+           messageTextArea.append("Float turned on.\n");
            messageField.setText("");
            this.setAlwaysOnTop(true);
            isFloating = true;
@@ -448,12 +464,16 @@ public class GUI extends javax.swing.JFrame {
                 if(userList.getSelectedIndex() == 0)
                 {
                     client.out.writeObject(new Message(Message.MESSAGE_ALL , username, messageField.getText()));
-                    jTextArea1.append(username + ": " + messageField.getText() + "\n");
+                    messageTextArea.append(username + ": " + messageField.getText() + "\n");
                 }
-                else
+                else if(listModel.get(userList.getSelectedIndex()).equals(username))
+                {
+                 //Do nothing          
+                }
+                else 
                 {
                     client.out.writeObject(new Message(Message.MESSAGE, (String) listModel.getElementAt(userList.getSelectedIndex()) , messageField.getText(), username));
-                    jTextArea1.append(username + ": " + messageField.getText() + "\n");
+                    messageTextArea.append(username + ": " + messageField.getText() + "\n");
                 }
                 
                 System.out.println("Sent message");
@@ -507,8 +527,8 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
-    public javax.swing.JTextArea jTextArea1;
     private javax.swing.JTextField messageField;
+    public javax.swing.JTextArea messageTextArea;
     private javax.swing.JButton sendMessageButton;
     private javax.swing.JButton startMusicButton;
     private javax.swing.JButton stopMusicButton;

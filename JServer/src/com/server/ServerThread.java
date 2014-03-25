@@ -74,7 +74,7 @@ public class ServerThread extends Thread {
                         case Message.LOGON:
                             username = message.username;
                             ThreadHandler.usernames.add(username);
-                            gui.serverList.addElement(username);
+                            gui.serverUserList.addElement(username);
                             for(int x = 0; x < ThreadHandler.usernames.size(); x++)
                                 System.out.println(ThreadHandler.usernames.get(x));          
                             for(int i = 0; i < ThreadHandler.serverThreads.size(); i++)
@@ -109,7 +109,7 @@ public class ServerThread extends Thread {
                             }
                             connected = false;
                             ThreadHandler.removeThread(this);
-                            gui.serverList.removeElement(message.username);
+                            gui.serverUserList.removeElement(message.username);
                             break;
                     }
                 }//End of try inside While Loop

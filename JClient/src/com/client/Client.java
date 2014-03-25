@@ -16,6 +16,7 @@ public class Client
     public String ip;
     public int position;
     public boolean connected = false;
+    public InetSocketAddress socketAddress;
     
     public Socket clientSocket;
     
@@ -23,7 +24,6 @@ public class Client
     {
         this.gui = gui;
         this.ip = ip;
-        startClient();
         
     }
     
@@ -33,7 +33,14 @@ public class Client
         
         
         try {
-            clientSocket = new Socket(ip, 44444);
+            clientSocket = new Socket();
+            socketAddress = new InetSocketAddress(ip, 44444);
+            if(socketAddress.isUnresolved())
+            {
+                throw new IllegalArgumentException();
+            }
+            clientSocket.connect(socketAddress, 2500);
+            gui.messageTextArea.append("Connected to server." + "\n");
             out = new ObjectOutputStream(clientSocket.getOutputStream());
             in = new ObjectInputStream(clientSocket.getInputStream());
             connected = true;
@@ -54,10 +61,10 @@ public class Client
                             switch(message.type)
                             {
                                 case Message.MESSAGE_ALL:
-                                    gui.jTextArea1.append(message.toString() + "\n");
+                                    gui.messageTextArea.append(message.toString() + "\n");
                                     break;
                                 case Message.MESSAGE:
-                                    gui.jTextArea1.append(message.toString() + "\n");
+                                    gui.messageTextArea.append(message.toString() + "\n");
                                     break;
                                 case Message.LOGON:                                   
                                     //System.out.println(message.usernames.size());
@@ -107,19 +114,32 @@ public class Client
                         }
                     }
                 }
-            });
+            }, "Client Read Thread");
             readThread.start();
-        } catch (IOException ex) {
-            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         } 
+        catch(SocketTimeoutException ex)
+        {
+            System.out.println(ex);
+            gui.messageTextArea.append("Connection timed out." + "\n");
+        }
+        catch(IllegalArgumentException ex)
+        {
+            System.out.println(ex);
+            gui.messageTextArea.append("Given address is not reachable." + "\n" );                   
+        }
+        catch (IOException ex) 
+        {
+            System.out.println(ex);
+            gui.messageTextArea.append("Could not connect to server." + "\n");
+        } 
+        
+        
     }
     public void closeClient() throws IOException
     {
 
         clientSocket.close();
         connected = false;
-        gui.client = null;
-        gui.connected = false;
         gui.listModel.clear();
     }
 }

@@ -18,6 +18,7 @@ import javax.swing.JFileChooser;
 import javax.swing.UIManager;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.text.DefaultCaret;
 
 /**
  *
@@ -25,14 +26,15 @@ import javax.swing.event.ListSelectionListener;
  */
 public class GUI extends javax.swing.JFrame {
 
-    ThreadHandler server;
+    ThreadHandler threadHandler;
     JFileChooser fileChooser;
     ServerThread[] serverThreads = new ServerThread[50];
     private boolean serverStarted = false;
-    private boolean clicked = false;
-    DefaultListModel serverList = new DefaultListModel();
+    DefaultListModel serverUserList = new DefaultListModel();
     public GUI() {
-        initComponents();      
+        initComponents();
+        DefaultCaret caret = (DefaultCaret)serverTextArea.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
     }
     public void closeServer()
     {
@@ -51,19 +53,18 @@ public class GUI extends javax.swing.JFrame {
             }
             
         }
-        server.running = false;
+        threadHandler.running = false;
         try {
-            server.serverSocket.close();
+            threadHandler.serverSocket.close();
         } catch (IOException ex) {
             System.out.println(ex);
         }
         
         ThreadHandler.usernames.clear();
         ThreadHandler.serverThreads.clear();
-        server = null;
+        threadHandler = null;
         serverStarted = false;
-        textArea.append("Server stopped." + "\n");
-        textArea.setCaretPosition(textArea.getText().length() - 1);
+        serverTextArea.append("Server stopped." + "\n");
     }
     /**
      * This method is called from within the constructor to initialize the form.
@@ -77,15 +78,14 @@ public class GUI extends javax.swing.JFrame {
         jScrollPane2 = new javax.swing.JScrollPane();
         jTable1 = new javax.swing.JTable();
         jScrollPane1 = new javax.swing.JScrollPane();
-        textArea = new javax.swing.JTextArea();
-        jButton1 = new javax.swing.JButton();
-        jButton2 = new javax.swing.JButton();
+        serverTextArea = new javax.swing.JTextArea();
+        startServerButton = new javax.swing.JButton();
+        stopServerButton = new javax.swing.JButton();
         jScrollPane3 = new javax.swing.JScrollPane();
         jList1 = new javax.swing.JList();
-        jMenuBar1 = new javax.swing.JMenuBar();
-        jMenu1 = new javax.swing.JMenu();
-        jMenuItem1 = new javax.swing.JMenuItem();
-        jMenu2 = new javax.swing.JMenu();
+        serverMenuBar = new javax.swing.JMenuBar();
+        fileMenu = new javax.swing.JMenu();
+        quitMenuItem = new javax.swing.JMenuItem();
 
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -101,47 +101,43 @@ public class GUI extends javax.swing.JFrame {
         jScrollPane2.setViewportView(jTable1);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("TestServer");
-        setBackground(new java.awt.Color(0, 0, 0));
+        setTitle("JServer");
 
-        textArea.setEditable(false);
-        textArea.setColumns(20);
-        textArea.setRows(5);
-        jScrollPane1.setViewportView(textArea);
+        serverTextArea.setEditable(false);
+        serverTextArea.setColumns(20);
+        serverTextArea.setRows(5);
+        jScrollPane1.setViewportView(serverTextArea);
 
-        jButton1.setText("Start Server");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        startServerButton.setText("Start Server");
+        startServerButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                startServerButtonActionPerformed(evt);
             }
         });
 
-        jButton2.setText("Stop Server");
-        jButton2.addActionListener(new java.awt.event.ActionListener() {
+        stopServerButton.setText("Stop Server");
+        stopServerButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton2ActionPerformed(evt);
+                stopServerButtonActionPerformed(evt);
             }
         });
 
-        jList1.setModel(serverList);
+        jList1.setModel(serverUserList);
         jScrollPane3.setViewportView(jList1);
 
-        jMenu1.setText("File");
+        fileMenu.setText("File");
 
-        jMenuItem1.setText("Close");
-        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+        quitMenuItem.setText("Quit");
+        quitMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem1ActionPerformed(evt);
+                quitMenuItemActionPerformed(evt);
             }
         });
-        jMenu1.add(jMenuItem1);
+        fileMenu.add(quitMenuItem);
 
-        jMenuBar1.add(jMenu1);
+        serverMenuBar.add(fileMenu);
 
-        jMenu2.setText("Edit");
-        jMenuBar1.add(jMenu2);
-
-        setJMenuBar(jMenuBar1);
+        setJMenuBar(serverMenuBar);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -149,9 +145,9 @@ public class GUI extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGap(126, 126, 126)
-                .addComponent(jButton1)
+                .addComponent(startServerButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jButton2)
+                .addComponent(stopServerButton)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             .addGroup(layout.createSequentialGroup()
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 434, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -160,7 +156,7 @@ public class GUI extends javax.swing.JFrame {
                 .addGap(0, 0, Short.MAX_VALUE))
         );
 
-        layout.linkSize(javax.swing.SwingConstants.HORIZONTAL, new java.awt.Component[] {jButton1, jButton2});
+        layout.linkSize(javax.swing.SwingConstants.HORIZONTAL, new java.awt.Component[] {startServerButton, stopServerButton});
 
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -170,33 +166,32 @@ public class GUI extends javax.swing.JFrame {
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton1))
+                    .addComponent(stopServerButton, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(startServerButton))
                 .addGap(0, 16, Short.MAX_VALUE))
         );
 
-        layout.linkSize(javax.swing.SwingConstants.VERTICAL, new java.awt.Component[] {jButton1, jButton2});
+        layout.linkSize(javax.swing.SwingConstants.VERTICAL, new java.awt.Component[] {startServerButton, stopServerButton});
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
-        System.exit(1);
-    }//GEN-LAST:event_jMenuItem1ActionPerformed
+    private void quitMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_quitMenuItemActionPerformed
+        System.exit(0);
+    }//GEN-LAST:event_quitMenuItemActionPerformed
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+    private void startServerButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startServerButtonActionPerformed
         if(serverStarted == false)
         {
-            server = new ThreadHandler(this);
-            textArea.append("Server started." + "\n");
-            textArea.setCaretPosition(textArea.getText().length() - 1);
+            threadHandler = new ThreadHandler(this);
+            serverTextArea.append("Server started." + "\n");
             serverStarted = true;
         }
-    }//GEN-LAST:event_jButton1ActionPerformed
+    }//GEN-LAST:event_startServerButtonActionPerformed
 
-    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+    private void stopServerButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_stopServerButtonActionPerformed
         closeServer();
-    }//GEN-LAST:event_jButton2ActionPerformed
+    }//GEN-LAST:event_stopServerButtonActionPerformed
 
     /**
      * @param args the command line arguments
@@ -229,17 +224,16 @@ public class GUI extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
-    private javax.swing.JButton jButton2;
+    private javax.swing.JMenu fileMenu;
     public javax.swing.JList jList1;
-    private javax.swing.JMenu jMenu1;
-    private javax.swing.JMenu jMenu2;
-    private javax.swing.JMenuBar jMenuBar1;
-    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JTable jTable1;
-    public javax.swing.JTextArea textArea;
+    private javax.swing.JMenuItem quitMenuItem;
+    private javax.swing.JMenuBar serverMenuBar;
+    public javax.swing.JTextArea serverTextArea;
+    private javax.swing.JButton startServerButton;
+    private javax.swing.JButton stopServerButton;
     // End of variables declaration//GEN-END:variables
 }
