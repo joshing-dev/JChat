@@ -3,12 +3,6 @@ package com.client;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javazoom.jl.decoder.JavaLayerException;
 
 import javazoom.jl.player.Player;
 
@@ -24,7 +18,7 @@ public class MP3 {
     public MP3(String filename) {
         
             this.filename = filename;
-    }
+    } 
     public MP3()
     {
         
@@ -42,6 +36,7 @@ public class MP3 {
             BufferedInputStream bis = new BufferedInputStream(fis);
             player = new Player(bis);
             new Thread(){
+            @Override
             public void run() {
                 
                     
@@ -49,7 +44,6 @@ public class MP3 {
                 try 
                 { 
                     player.play(); 
-                   
                 }
                 catch (Exception e) { System.out.println("Issue with thread. " + e); }
                 }

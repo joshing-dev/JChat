@@ -5,49 +5,36 @@ import java.net.*;
 
 public class Download implements Runnable{
     
-    public ServerSocket server;
-    public Socket socket;
-    public int port;
-    public String saveTo = "";
-    public InputStream In;
-    public FileOutputStream Out;
+    protected ObjectInputStream in;
+    protected File file;
+    public FileOutputStream fileOut;
+    protected FileInputStream fileIn;
     public GUI gui;
     
-    public Download(String saveTo, GUI gui){
-        try {
-            server = new ServerSocket(0);
-            port = server.getLocalPort();
-            this.saveTo = saveTo;
-            this.gui = gui;
-        } 
-        catch (IOException ex) {
-            System.out.println("Exception [Download : Download(...)]");
-        }
+    public Download(File file, GUI gui, ObjectInputStream in){
+        this.file = file;
+        this.gui = gui;
     }
 
     @Override
     public void run() {
         try {
-            socket = server.accept();
-            System.out.println("Download : "+socket.getRemoteSocketAddress());
+            file.createNewFile();
+            fileOut = new FileOutputStream(file);
             
-            In = socket.getInputStream();
-            Out = new FileOutputStream(saveTo);
+            byte[] buffer = new byte[1024 * 1024];
             
-            byte[] buffer = new byte[1024];
             int count;
-            
-            while((count = In.read(buffer)) >= 0){
-                Out.write(buffer, 0, count);
+            while((count = in.read(buffer)) >= 0){
+                fileOut.write(buffer, 0, count);
             }
             
-            Out.flush();
+            fileOut.flush();
             
-            gui.messageTextArea.append("[Application > Me] : Download complete\n");
+            gui.messageTextArea.append("Download complete\n");
             
-            if(Out != null){ Out.close(); }
-            if(In != null){ In.close(); }
-            if(socket != null){ socket.close(); }
+            if(fileOut != null){ fileOut.close(); }
+            if(in != null){ in.close(); }
         } 
         catch (Exception ex) {
             System.out.println("Exception [Download : run(...)]");

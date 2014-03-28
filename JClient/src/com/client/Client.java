@@ -2,8 +2,10 @@ package com.client;
 import com.shared.Message;
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 
 
 public class Client
@@ -17,6 +19,8 @@ public class Client
     public int position;
     public boolean connected = false;
     public InetSocketAddress socketAddress;
+    public boolean downloading = false;
+    public ArrayList<byte[]> byteList = new ArrayList<byte[]>();
     
     public Socket clientSocket;
     
@@ -91,6 +95,27 @@ public class Client
                                     break;
                                 case Message.SERVER_SHUTDOWN:
                                     closeClient();
+                                    break;
+                                case Message.UPLOAD_REQ:
+                                    int x = JOptionPane.showConfirmDialog(gui, message.username + " would like to send a file? Do you accept?" , "Download Request", JOptionPane.YES_NO_OPTION);
+                                    if(x == JOptionPane.YES_OPTION)
+                                    {
+                                        //out.writeObject(Message.UPLOAD_ACCEPT, gui.recipient, );
+                                    }
+                                    break;
+                                case Message.UPLOAD_ACCEPT:
+                                    gui.fileTextField.setEditable(false);
+                                    gui.chooseDownFileButton.setEnabled(false);
+                                    gui.sendFileButton.setEnabled(false);
+                                    File file = new File(gui.fileTextField.getText());
+                                    Upload upload = new Upload(file, gui, out);
+                                    break;
+                                case Message.UPLOAD_DENY:
+                                    gui.messageTextArea.append(message.username + " denied file transfer.");
+                                    break;
+                                case Message.FILE:
+                                    byteList.add(message.getByteData());
+                                    
                                     break;
                                     
                             }

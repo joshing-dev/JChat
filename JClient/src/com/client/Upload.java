@@ -1,53 +1,55 @@
 package com.client;
 
+import com.shared.Message;
 import java.io.*;;
 import java.net.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.*;
+import java.net.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.net.*;
 
 public class Upload implements Runnable{
 
-    public String addr;
+    public String ip;
     public int port;
     public Socket socket;
-    public FileInputStream In;
-    public OutputStream Out;
+    public FileInputStream fileIn;
+    public ObjectOutputStream out;
     public File file;
     public GUI gui;
     
-    public Upload(String addr, int port, File filepath, GUI gui){
-        super();
+    public Upload(File filepath, GUI gui, ObjectOutputStream out){
         try {
             file = filepath;
             this.gui = gui;
-            socket = new Socket(InetAddress.getByName(addr), port);
-            Out = socket.getOutputStream();
-            In = new FileInputStream(filepath);
+            this.out = out;
+            fileIn = new FileInputStream(file);
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(Upload.class.getName()).log(Level.SEVERE, null, ex);
         } 
-        catch (Exception ex) {
-            System.out.println("Exception [Upload : Upload(...)]");
-        }
     }
     
     @Override
     public void run() {
         try {       
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[1024 * 1024];
             int count;
             
-            while((count = In.read(buffer)) >= 0){
-                Out.write(buffer, 0, count);
+            while((count = fileIn.read(buffer)) != -1){
+                out.writeObject(new Message(Message.FILE, gui.recipient, buffer, gui.username));
             }
-            Out.flush();            
+            out.flush();            
             gui.messageTextArea.append("[Applcation > Me] : File upload complete\n");           
-            if(In != null){ In.close(); }
-            if(Out != null){ Out.close(); }
+            if(fileIn != null){ fileIn.close(); }
+            if(out != null){ out.close(); }
             if(socket != null){ socket.close(); }
+        } catch (IOException ex) {
+            Logger.getLogger(Upload.class.getName()).log(Level.SEVERE, null, ex);
         }
-        catch (Exception ex) {
-            System.out.println("Exception [Upload : run()]");
-            ex.printStackTrace();
-        }
+        
     }
 
 }

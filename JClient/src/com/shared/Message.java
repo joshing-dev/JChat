@@ -11,9 +11,11 @@ public class Message implements Serializable{
     public String content;
     public String username;
     public ArrayList<String> usernames;
-    public final static int MESSAGE = 0,MESSAGE_ALL = 1, LOGON = 2, LOGOUT = 3, SERVER_SHUTDOWN = 4;
+    public byte[] fileData;
+    public final static int MESSAGE = 0,MESSAGE_ALL = 1, LOGON = 2, LOGOUT = 3, SERVER_SHUTDOWN = 4, UPLOAD_REQ = 5, UPLOAD_DENY = 6, UPLOAD_ACCEPT = 7, FILE = 8;
     /**
-     *
+     * Creates a Message object to be sent over the stream. 
+     * It can contain a user message or file data.
      * @param position The position of the client.
      * @param type The type of message.
      * @param recipient Who the message is going to in the server.
@@ -35,6 +37,7 @@ public class Message implements Serializable{
         this.usernames = usernames;
     }
     //Message.LOGON from client
+    
     public Message(int type, String username)
     {
         this.type = type;
@@ -52,6 +55,14 @@ public class Message implements Serializable{
     {
         this.type = type;
     }
+    //Message.FILE
+    public Message(int type,String recipient, byte[] fileData, String username )
+    {
+        this.type = type;
+        this.recipient = recipient;
+        this.fileData = fileData;
+        this.username = username;
+    }
     public int getPosition()
     {
         return position;
@@ -67,6 +78,10 @@ public class Message implements Serializable{
     public String getContent()
     {
         return content;
+    }
+    public byte[] getByteData()
+    {
+        return fileData;
     }
     @Override
     public String toString()
