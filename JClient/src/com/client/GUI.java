@@ -11,10 +11,6 @@ import java.awt.Color;
 import java.awt.Image;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.*;
@@ -28,8 +24,6 @@ import javax.swing.JFileChooser;
 import javax.swing.UIManager;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.event.ListDataEvent;
-import javax.swing.event.ListDataListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.text.DefaultCaret;
@@ -49,9 +43,15 @@ public class GUI extends javax.swing.JFrame {
     private boolean getNotifications = false;
     //Determines if the JFrame is floating.
     private boolean isFloating = false;
+    //Receving user's name
     public String recipient;
+    //Length of the file as a long value
+    public long fileLength;
+    //The IP Address to connect to
     String ip = "";
+    //Path of the file to send to another user.
     String fileToSend = "";
+    //The property file
     File propFile;
     public static final TrayIcon trayIcon = new TrayIcon(createImage("images/alien.gif", "Tray Icon"),"JChat");
     public static final SystemTray tray = SystemTray.getSystemTray();
@@ -61,7 +61,7 @@ public class GUI extends javax.swing.JFrame {
         listModel = new DefaultListModel();
         mp3 = new MP3();
         initComponents();
-        extraWindowSetup();      
+        extraWindowSetup();
         setupPropertiesFile();
         ShutDownHook shutDownHook = new ShutDownHook();
         Runtime.getRuntime().addShutdownHook(shutDownHook);           
@@ -123,10 +123,10 @@ public class GUI extends javax.swing.JFrame {
     private void extraWindowSetup()
     {
         getContentPane().setBackground(Color.BLACK);
-        //messageTextArea.setBackground(Color.RED);
         setLocationRelativeTo(null);
         DefaultCaret caret = (DefaultCaret)messageTextArea.getCaret();
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        SmartScroller smartScroller = new SmartScroller(textAreaScrollPane);
         for(int i = 0; i < listModel.capacity(); i++)
                 listModel.add(i, "");
         listModel.set(0, "All");
@@ -139,6 +139,7 @@ public class GUI extends javax.swing.JFrame {
         {
             System.out.println("System Tray was not present.");
         }
+        this.setIconImage(createImage("images/alien.gif", "Application Icon"));
     }
     private void setupPropertiesFile()
     {
@@ -182,34 +183,41 @@ public class GUI extends javax.swing.JFrame {
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
-        jScrollPane1 = new javax.swing.JScrollPane();
+        messagePanel = new javax.swing.JPanel();
+        textAreaScrollPane = new javax.swing.JScrollPane();
         messageTextArea = new javax.swing.JTextArea();
+        messageField = new javax.swing.JTextField();
+        userListPane = new javax.swing.JScrollPane();
+        userList = new javax.swing.JList();
+        sendMessageButton = new javax.swing.JButton();
+        inputPanel = new javax.swing.JPanel();
+        hostLabel = new javax.swing.JLabel();
         hostField = new javax.swing.JTextField();
-        jLabel1 = new javax.swing.JLabel();
+        usernameLabel = new javax.swing.JLabel();
+        fileLabel = new javax.swing.JLabel();
+        usernameField = new javax.swing.JTextField();
+        fileTextField = new javax.swing.JTextField();
         discButton = new javax.swing.JButton();
         connectButton = new javax.swing.JButton();
-        jLabel2 = new javax.swing.JLabel();
-        jScrollPane2 = new javax.swing.JScrollPane();
-        userList = new javax.swing.JList();
-        jPanel1 = new javax.swing.JPanel();
+        chooseDownFileButton = new javax.swing.JButton();
+        sendFileButton = new javax.swing.JButton();
+        progressBar = new javax.swing.JProgressBar();
+        mp3Container = new javax.swing.JPanel();
+        mp3Label = new javax.swing.JLabel();
+        mp3Panel = new javax.swing.JPanel();
         stopMusicButton = new javax.swing.JButton();
         startMusicButton = new javax.swing.JButton();
         chooseMusicButton = new javax.swing.JButton();
-        usernameField = new javax.swing.JTextField();
-        messageField = new javax.swing.JTextField();
-        sendMessageButton = new javax.swing.JButton();
-        mp3Label = new javax.swing.JLabel();
-        fileLabel = new javax.swing.JLabel();
-        fileTextField = new javax.swing.JTextField();
-        chooseDownFileButton = new javax.swing.JButton();
-        sendFileButton = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("JClient");
         setBackground(new java.awt.Color(0, 0, 0));
-        setMinimumSize(new java.awt.Dimension(645, 378));
-        setPreferredSize(new java.awt.Dimension(645, 378));
+        setMinimumSize(new java.awt.Dimension(838, 324));
+        setPreferredSize(new java.awt.Dimension(838, 324));
         getContentPane().setLayout(new java.awt.GridBagLayout());
+
+        messagePanel.setBackground(new java.awt.Color(0, 0, 0));
+        messagePanel.setLayout(new java.awt.GridBagLayout());
 
         messageTextArea.setEditable(false);
         messageTextArea.setBackground(new java.awt.Color(51, 51, 51));
@@ -218,7 +226,7 @@ public class GUI extends javax.swing.JFrame {
         messageTextArea.setLineWrap(true);
         messageTextArea.setRows(5);
         messageTextArea.setWrapStyleWord(true);
-        jScrollPane1.setViewportView(messageTextArea);
+        textAreaScrollPane.setViewportView(messageTextArea);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -227,24 +235,112 @@ public class GUI extends javax.swing.JFrame {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
-        getContentPane().add(jScrollPane1, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.ipadx = 350;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(0, 45, 0, 0);
-        getContentPane().add(hostField, gridBagConstraints);
+        messagePanel.add(textAreaScrollPane, gridBagConstraints);
 
-        jLabel1.setForeground(new java.awt.Color(255, 255, 0));
-        jLabel1.setText("Host:");
+        messageField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                messageFieldActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        messagePanel.add(messageField, gridBagConstraints);
+
+        userListPane.setPreferredSize(new java.awt.Dimension(57, 130));
+
+        userList.setModel(listModel);
+        userListPane.setViewportView(userList);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        messagePanel.add(userListPane, gridBagConstraints);
+
+        sendMessageButton.setText("Send");
+        sendMessageButton.setPreferredSize(new java.awt.Dimension(57, 28));
+        sendMessageButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                sendMessageButtonActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.ipadx = 50;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        messagePanel.add(sendMessageButton, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 1.0;
+        getContentPane().add(messagePanel, gridBagConstraints);
+
+        inputPanel.setBackground(new java.awt.Color(0, 0, 0));
+        inputPanel.setLayout(new java.awt.GridBagLayout());
+
+        hostLabel.setForeground(new java.awt.Color(255, 255, 0));
+        hostLabel.setText("Host:");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.insets = new java.awt.Insets(6, 0, 0, 0);
+        inputPanel.add(hostLabel, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.ipadx = 350;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        inputPanel.add(hostField, gridBagConstraints);
+
+        usernameLabel.setForeground(new java.awt.Color(255, 255, 0));
+        usernameLabel.setText("Username:");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.insets = new java.awt.Insets(6, 0, 0, 0);
+        inputPanel.add(usernameLabel, gridBagConstraints);
+
+        fileLabel.setForeground(new java.awt.Color(255, 255, 0));
+        fileLabel.setText("File:");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
-        gridBagConstraints.ipady = 9;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
-        getContentPane().add(jLabel1, gridBagConstraints);
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.insets = new java.awt.Insets(6, 0, 0, 0);
+        inputPanel.add(fileLabel, gridBagConstraints);
+
+        usernameField.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                usernameFieldActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.ipadx = 350;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        inputPanel.add(usernameField, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.ipadx = 350;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        inputPanel.add(fileTextField, gridBagConstraints);
 
         discButton.setText("Disconnect");
         discButton.addActionListener(new java.awt.event.ActionListener() {
@@ -253,12 +349,11 @@ public class GUI extends javax.swing.JFrame {
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.ipady = 10;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
-        getContentPane().add(discButton, gridBagConstraints);
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        inputPanel.add(discButton, gridBagConstraints);
 
         connectButton.setText("Connect");
         connectButton.addActionListener(new java.awt.event.ActionListener() {
@@ -267,38 +362,76 @@ public class GUI extends javax.swing.JFrame {
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.ipadx = 20;
-        gridBagConstraints.ipady = 10;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(0, 120, 0, 0);
-        getContentPane().add(connectButton, gridBagConstraints);
-
-        jLabel2.setForeground(new java.awt.Color(255, 255, 0));
-        jLabel2.setText("Username:");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 4;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(3, 5, 0, 0);
-        getContentPane().add(jLabel2, gridBagConstraints);
-
-        jScrollPane2.setPreferredSize(new java.awt.Dimension(57, 130));
-
-        userList.setModel(listModel);
-        jScrollPane2.setViewportView(userList);
-
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
-        getContentPane().add(jScrollPane2, gridBagConstraints);
+        inputPanel.add(connectButton, gridBagConstraints);
 
-        jPanel1.setBackground(new java.awt.Color(255, 0, 0));
-        jPanel1.setBorder(javax.swing.BorderFactory.createEtchedBorder(javax.swing.border.EtchedBorder.RAISED));
+        chooseDownFileButton.setText("...");
+        chooseDownFileButton.setPreferredSize(new java.awt.Dimension(55, 20));
+        chooseDownFileButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                chooseDownFileButtonActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        inputPanel.add(chooseDownFileButton, gridBagConstraints);
+
+        sendFileButton.setText("Send File");
+        sendFileButton.setPreferredSize(new java.awt.Dimension(75, 20));
+        sendFileButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                sendFileButtonActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 3;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        inputPanel.add(sendFileButton, gridBagConstraints);
+
+        progressBar.setString(null);
+        progressBar.setStringPainted(true);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        inputPanel.add(progressBar, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        getContentPane().add(inputPanel, gridBagConstraints);
+
+        mp3Container.setLayout(new java.awt.GridBagLayout());
+
+        mp3Label.setBackground(new java.awt.Color(255, 153, 0));
+        mp3Label.setFont(new java.awt.Font("Segoe Script", 0, 18)); // NOI18N
+        mp3Label.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        mp3Label.setText("The MP3 Player");
+        mp3Label.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(238, 155, 60), 1, true));
+        mp3Label.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        mp3Label.setOpaque(true);
+        mp3Label.setVerticalTextPosition(javax.swing.SwingConstants.TOP);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.weighty = 1.0;
+        mp3Container.add(mp3Label, gridBagConstraints);
+
+        mp3Panel.setBackground(new java.awt.Color(255, 0, 0));
+        mp3Panel.setBorder(javax.swing.BorderFactory.createEtchedBorder(javax.swing.border.EtchedBorder.RAISED));
 
         stopMusicButton.setText("Stop");
         stopMusicButton.addActionListener(new java.awt.event.ActionListener() {
@@ -321,147 +454,49 @@ public class GUI extends javax.swing.JFrame {
             }
         });
 
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+        javax.swing.GroupLayout mp3PanelLayout = new javax.swing.GroupLayout(mp3Panel);
+        mp3Panel.setLayout(mp3PanelLayout);
+        mp3PanelLayout.setHorizontalGroup(
+            mp3PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, mp3PanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                .addGroup(mp3PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(chooseMusicButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
+                    .addGroup(mp3PanelLayout.createSequentialGroup()
                         .addComponent(startMusicButton, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(stopMusicButton)))
                 .addContainerGap())
         );
 
-        jPanel1Layout.linkSize(javax.swing.SwingConstants.HORIZONTAL, new java.awt.Component[] {startMusicButton, stopMusicButton});
+        mp3PanelLayout.linkSize(javax.swing.SwingConstants.HORIZONTAL, new java.awt.Component[] {startMusicButton, stopMusicButton});
 
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
+        mp3PanelLayout.setVerticalGroup(
+            mp3PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(mp3PanelLayout.createSequentialGroup()
                 .addGap(16, 16, 16)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(mp3PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(startMusicButton)
                     .addComponent(stopMusicButton))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(chooseMusicButton, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(97, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 0;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.ipady = 7;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTH;
-        gridBagConstraints.insets = new java.awt.Insets(109, 3, 0, 0);
-        getContentPane().add(jPanel1, gridBagConstraints);
-
-        usernameField.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                usernameFieldActionPerformed(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 4;
-        gridBagConstraints.ipadx = 325;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(3, 69, 0, 0);
-        getContentPane().add(usernameField, gridBagConstraints);
-
-        messageField.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                messageFieldActionPerformed(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.ipadx = 450;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
-        gridBagConstraints.insets = new java.awt.Insets(3, 0, 0, 0);
-        getContentPane().add(messageField, gridBagConstraints);
+        mp3Container.add(mp3Panel, gridBagConstraints);
 
-        sendMessageButton.setText("Send");
-        sendMessageButton.setPreferredSize(new java.awt.Dimension(57, 28));
-        sendMessageButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                sendMessageButtonActionPerformed(evt);
-            }
-        });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.ipadx = 25;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
-        gridBagConstraints.insets = new java.awt.Insets(3, 1, 0, 0);
-        getContentPane().add(sendMessageButton, gridBagConstraints);
-
-        mp3Label.setBackground(new java.awt.Color(255, 153, 0));
-        mp3Label.setFont(new java.awt.Font("Segoe Script", 0, 18)); // NOI18N
-        mp3Label.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        mp3Label.setText("The MP3 Player");
-        mp3Label.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(238, 155, 60), 1, true));
-        mp3Label.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        mp3Label.setOpaque(true);
-        mp3Label.setVerticalTextPosition(javax.swing.SwingConstants.TOP);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 0;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.ipadx = 46;
-        gridBagConstraints.ipady = 75;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTH;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
         gridBagConstraints.insets = new java.awt.Insets(0, 3, 0, 0);
-        getContentPane().add(mp3Label, gridBagConstraints);
-
-        fileLabel.setForeground(new java.awt.Color(255, 255, 0));
-        fileLabel.setText("File:");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 5;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(3, 5, 3, 0);
-        getContentPane().add(fileLabel, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 5;
-        gridBagConstraints.ipadx = 160;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(3, 29, 3, 0);
-        getContentPane().add(fileTextField, gridBagConstraints);
-
-        chooseDownFileButton.setText("...");
-        chooseDownFileButton.setPreferredSize(new java.awt.Dimension(55, 20));
-        chooseDownFileButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                chooseDownFileButtonActionPerformed(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 5;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(3, 205, 3, 0);
-        getContentPane().add(chooseDownFileButton, gridBagConstraints);
-
-        sendFileButton.setText("Send File");
-        sendFileButton.setPreferredSize(new java.awt.Dimension(75, 20));
-        sendFileButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                sendFileButtonActionPerformed(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 5;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(3, 270, 3, 0);
-        getContentPane().add(sendFileButton, gridBagConstraints);
+        getContentPane().add(mp3Container, gridBagConstraints);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -511,6 +546,11 @@ public class GUI extends javax.swing.JFrame {
     private void connectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectButtonActionPerformed
         if(!client.connected)
         {
+            if(usernameField.getText().isEmpty())
+            {
+                messageTextArea.append("Please type in a username first.\n");
+                return;
+            }
             client.ip = hostField.getText();
             messageTextArea.append("Connecting to server..." + "\n");
             client.startClient();
@@ -536,6 +576,11 @@ public class GUI extends javax.swing.JFrame {
     }//GEN-LAST:event_usernameFieldActionPerformed
 
     private void sendMessageButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendMessageButtonActionPerformed
+
+       if(messageField.getText().isEmpty())
+       {
+           return;
+       }       
        if(messageField.getText().equals("/float") && isFloating)
        {
            messageTextArea.append("Float turned off.\n");
@@ -558,8 +603,12 @@ public class GUI extends javax.swing.JFrame {
             {
                 if(userList.getSelectedIndex() == 0)
                 {
-                    client.out.writeObject(new Message(Message.MESSAGE_ALL , username, messageField.getText()));
-                    messageTextArea.append(username + ": " + messageField.getText() + "\n");
+                    synchronized(client.out)
+                    {
+                        client.out.writeObject(new Message(Message.MESSAGE_ALL , username, messageField.getText()));
+                        messageTextArea.append("[" + username + "] " + messageField.getText() + "\n");
+                    }
+                    
                 }
                 else if(listModel.get(userList.getSelectedIndex()).equals(username))
                 {
@@ -567,8 +616,13 @@ public class GUI extends javax.swing.JFrame {
                 }
                 else 
                 {
-                    client.out.writeObject(new Message(Message.MESSAGE, (String) listModel.getElementAt(userList.getSelectedIndex()) , messageField.getText(), username));
-                    messageTextArea.append(username + ": " + messageField.getText() + "\n");
+                    recipient = (String) listModel.getElementAt(userList.getSelectedIndex());
+                    synchronized(client.out)
+                    {
+                       client.out.writeObject(new Message(Message.MESSAGE, recipient, messageField.getText(), username)); 
+                    }
+                    
+                    messageTextArea.append("[" + username + "] " + messageField.getText() + "\n");
                 }
                 
                 System.out.println("Sent message");
@@ -591,14 +645,25 @@ public class GUI extends javax.swing.JFrame {
         {
             fileTextField.setText(fileChooser.getSelectedFile().getAbsolutePath());
             fileToSend = fileChooser.getSelectedFile().getName();
-            System.out.println(fileToSend);
+            fileLength = (fileChooser.getSelectedFile().length());
         }
     }//GEN-LAST:event_chooseDownFileButtonActionPerformed
 
     private void sendFileButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendFileButtonActionPerformed
+        if(userList.getSelectedIndex() == 0)
+        {
+            messageTextArea.append("Sending files to all users not allowed.\n");
+            return;
+        }
+        else if(listModel.getElementAt(userList.getSelectedIndex()).equals(username))
+        {
+            messageTextArea.append("You may not send a file to yourself.\n");
+            return;
+        }
         recipient = (String) listModel.getElementAt(userList.getSelectedIndex());
         try {
-            client.out.writeObject(new Message(Message.UPLOAD_REQ, recipient, fileToSend , username));
+            client.out.writeObject(new Message(Message.UPLOAD_REQ, recipient, fileToSend, fileLength, username));
+            messageTextArea.append("Sent out upload request.\n");
         } catch (IOException ex) {
             Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -639,19 +704,23 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JLabel fileLabel;
     public javax.swing.JTextField fileTextField;
     private javax.swing.JTextField hostField;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JLabel hostLabel;
+    private javax.swing.JPanel inputPanel;
     private javax.swing.JTextField messageField;
+    private javax.swing.JPanel messagePanel;
     public javax.swing.JTextArea messageTextArea;
+    private javax.swing.JPanel mp3Container;
     private javax.swing.JLabel mp3Label;
+    private javax.swing.JPanel mp3Panel;
+    public javax.swing.JProgressBar progressBar;
     public javax.swing.JButton sendFileButton;
     private javax.swing.JButton sendMessageButton;
     private javax.swing.JButton startMusicButton;
     private javax.swing.JButton stopMusicButton;
+    private javax.swing.JScrollPane textAreaScrollPane;
     public javax.swing.JList userList;
+    private javax.swing.JScrollPane userListPane;
     public javax.swing.JTextField usernameField;
+    private javax.swing.JLabel usernameLabel;
     // End of variables declaration//GEN-END:variables
 }

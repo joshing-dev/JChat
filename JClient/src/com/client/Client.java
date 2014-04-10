@@ -5,12 +5,13 @@ import java.net.*;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
 
 public class Client
 {
-    public ObjectOutputStream out;
+    public volatile ObjectOutputStream out;
     public ObjectInputStream in;
     private static Thread readThread;
     private static Thread outputThread;
@@ -20,8 +21,10 @@ public class Client
     public boolean connected = false;
     public InetSocketAddress socketAddress;
     public boolean downloading = false;
+    public File fileToSaveTo;
     public ArrayList<byte[]> byteList = new ArrayList<byte[]>();
-    
+    public long byteCounter = 0;
+    public long byteLength = 0;
     public Socket clientSocket;
     
     public Client(GUI gui, String ip)
@@ -97,26 +100,64 @@ public class Client
                                     closeClient();
                                     break;
                                 case Message.UPLOAD_REQ:
-                                    int x = JOptionPane.showConfirmDialog(gui, message.username + " would like to send a file? Do you accept?" , "Download Request", JOptionPane.YES_NO_OPTION);
+                                    System.out.println("Received upload request");
+                                    if(downloading)
+                                    {
+                                       out.writeObject(new Message(Message.UPLOAD_DENY, message.username, "", gui.username));
+                                       break;
+                                    }
+                                    int x = JOptionPane.showConfirmDialog(gui, message.username + " would like to send you " + message.content +" (" + (message.getFileLength()/1024/1024) + "MB)" , "Download Request", JOptionPane.YES_NO_OPTION);
                                     if(x == JOptionPane.YES_OPTION)
                                     {
-                                        //out.writeObject(Message.UPLOAD_ACCEPT, gui.recipient, );
+                                        JFileChooser fileChooser = new JFileChooser();
+                                        fileChooser.setSelectedFile(new File(message.getContent()));
+                                        int i = fileChooser.showSaveDialog(gui);                                                                        if(i == JFileChooser.APPROVE_OPTION)
+                                        {
+                                            fileToSaveTo = fileChooser.getSelectedFile();
+                                            System.out.println(fileToSaveTo.toString());
+                                            System.out.println(message.dataLength);
+                                            byteLength = message.getFileLength();
+                                            gui.progressBar.setMaximum((int)byteLength);
+                                            System.out.println("Attempting to send out upload accept");
+                                            Download download = new Download(fileToSaveTo, byteLength, gui, gui.client);
+                                            Thread downloadThread = new Thread(download, "Download Thread");
+                                            downloadThread.start();
+                                            out.reset();
+                                            out.writeObject(new Message(Message.UPLOAD_ACCEPT, message.username, "", gui.username));
+                                            
+                                            System.out.println("Sent out upload accept");
+                                        }
+                                        else if(i == JFileChooser.CANCEL_OPTION)
+                                        {
+                                            out.reset();
+                                            out.writeObject(new Message(Message.UPLOAD_DENY, message.username, "", gui.username));
+                                        System.out.println("No sent to user.");
+                                        }
+                                        break;
+                                    }
+                                    else if(x == JOptionPane.NO_OPTION)
+                                    {                           
+                                        out.reset();
+                                        out.writeObject(new Message(Message.UPLOAD_DENY, message.username, "", gui.username));
+                                        System.out.println("No sent to user.");
                                     }
                                     break;
                                 case Message.UPLOAD_ACCEPT:
+                                    System.out.println("Received upload accept");
                                     gui.fileTextField.setEditable(false);
                                     gui.chooseDownFileButton.setEnabled(false);
                                     gui.sendFileButton.setEnabled(false);
                                     File file = new File(gui.fileTextField.getText());
-                                    Upload upload = new Upload(file, gui, out);
+                                    Upload upload = new Upload(gui.username, message.username, file, gui);
+                                    Thread thread = new Thread(upload, "Upload Thread");
+                                    thread.start();
+                                    System.out.println("Upload thread started.");
                                     break;
                                 case Message.UPLOAD_DENY:
-                                    gui.messageTextArea.append(message.username + " denied file transfer.");
+                                    System.out.println("Received upload deny.");
+                                    gui.messageTextArea.append(message.username + " denied file transfer.\n");
                                     break;
-                                case Message.FILE:
-                                    byteList.add(message.getByteData());
-                                    
-                                    break;
+                                
                                     
                             }
                         }

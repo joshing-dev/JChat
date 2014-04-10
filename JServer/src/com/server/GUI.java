@@ -27,14 +27,40 @@ import javax.swing.text.DefaultCaret;
 public class GUI extends javax.swing.JFrame {
 
     ThreadHandler threadHandler;
+    FileSocketHandler fileSocketHandler;
     JFileChooser fileChooser;
-    ServerThread[] serverThreads = new ServerThread[50];
     private boolean serverStarted = false;
     DefaultListModel serverUserList = new DefaultListModel();
     public GUI() {
         initComponents();
         DefaultCaret caret = (DefaultCaret)serverTextArea.getCaret();
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        ShutDownHook shutDownHook = new ShutDownHook();
+        Runtime.getRuntime().addShutdownHook(shutDownHook);
+    }
+    private class ShutDownHook extends Thread
+    {
+        @Override
+        public void run()
+        {
+            for(int i = 0; i < ThreadHandler.serverThreads.size(); i++)
+            {
+                try 
+                {
+                    ThreadHandler.serverThreads.get(i).out.writeObject(new Message(Message.SERVER_SHUTDOWN));      
+                    ThreadHandler.serverThreads.get(i).out.flush();
+                    ThreadHandler.serverThreads.get(i).clientSocket.close();
+                    ThreadHandler.serverThreads.get(i).connected = false; 
+                    threadHandler.serverSocket.close();           
+                } 
+                catch(IOException ex) 
+                {
+                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                
+            
+            }       
+        }
     }
     public void closeServer()
     {
@@ -42,8 +68,8 @@ public class GUI extends javax.swing.JFrame {
         {
             try 
             {
-                ThreadHandler.serverThreads.get(i).out.flush();
                 ThreadHandler.serverThreads.get(i).out.writeObject(new Message(Message.SERVER_SHUTDOWN));      
+                ThreadHandler.serverThreads.get(i).out.flush();
                 ThreadHandler.serverThreads.get(i).clientSocket.close();
                 ThreadHandler.serverThreads.get(i).connected = false;             
             } 
@@ -62,9 +88,10 @@ public class GUI extends javax.swing.JFrame {
         
         ThreadHandler.usernames.clear();
         ThreadHandler.serverThreads.clear();
+        serverUserList.clear();
         threadHandler = null;
         serverStarted = false;
-        serverTextArea.append("Server stopped." + "\n");
+        serverTextArea.append("Server stopped.\n");
     }
     /**
      * This method is called from within the constructor to initialize the form.
@@ -177,6 +204,7 @@ public class GUI extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void quitMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_quitMenuItemActionPerformed
+        closeServer();
         System.exit(0);
     }//GEN-LAST:event_quitMenuItemActionPerformed
 
@@ -184,6 +212,7 @@ public class GUI extends javax.swing.JFrame {
         if(serverStarted == false)
         {
             threadHandler = new ThreadHandler(this);
+            fileSocketHandler = new FileSocketHandler(this);
             serverTextArea.append("Server started." + "\n");
             serverStarted = true;
         }

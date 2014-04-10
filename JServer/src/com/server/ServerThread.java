@@ -19,7 +19,7 @@ public class ServerThread extends Thread {
     public ThreadHandler server;
     public Thread serverThread;
     public Socket clientSocket;
-    public ObjectOutputStream out;
+    public volatile ObjectOutputStream out;
     public ObjectInputStream in;
     public GUI gui;
     public boolean connected;
@@ -30,6 +30,10 @@ public class ServerThread extends Thread {
         this.gui = gui;
         this.clientSocket = clientSocket;
         this.server = server;
+    }
+    public synchronized void sendMessage(Message message) throws IOException
+    {
+        out.writeObject(message);
     }
     public void run()
     {
@@ -52,7 +56,7 @@ public class ServerThread extends Thread {
                             {
                                 if(ThreadHandler.serverThreads.get(i).username.equals(message.recipient))
                                         {
-                                            ThreadHandler.serverThreads.get(i).out.writeObject(message);
+                                            ThreadHandler.serverThreads.get(i).sendMessage(message);
                                         }    
                             }
                             
@@ -65,7 +69,7 @@ public class ServerThread extends Thread {
                                     
                                             {
                                                 if(ThreadHandler.serverThreads.get(i) != this)
-                                                ThreadHandler.serverThreads.get(i).out.writeObject(message);
+                                                ThreadHandler.serverThreads.get(i).sendMessage(message);
                                             }
                                 }
                             }
@@ -81,7 +85,7 @@ public class ServerThread extends Thread {
                             {
                                     ThreadHandler.serverThreads.get(i).out.reset();
                                     //ThreadHandler.serverThreads.get(i).out.flush();
-                                    ThreadHandler.serverThreads.get(i).out.writeObject(new Message(Message.LOGON, ThreadHandler.usernames));
+                                    ThreadHandler.serverThreads.get(i).sendMessage(new Message(Message.LOGON, ThreadHandler.usernames));
                                     
                             
                                 
@@ -100,7 +104,7 @@ public class ServerThread extends Thread {
                                 {
                                     ThreadHandler.serverThreads.get(i).out.reset();
                                     ThreadHandler.serverThreads.get(i).out.flush();
-                                    ThreadHandler.serverThreads.get(i).out.writeObject(new Message(Message.LOGOUT, message.username));
+                                    ThreadHandler.serverThreads.get(i).sendMessage(new Message(Message.LOGOUT, message.username));
                                     
                                 }
                                     
@@ -111,6 +115,34 @@ public class ServerThread extends Thread {
                             ThreadHandler.removeThread(this);
                             gui.serverUserList.removeElement(message.username);
                             break;
+                        case Message.UPLOAD_REQ:
+                            for(int i = 0; i < ThreadHandler.serverThreads.size(); i++)
+                            {
+                                if(ThreadHandler.serverThreads.get(i).username.equals(message.recipient))
+                                        {
+                                            ThreadHandler.serverThreads.get(i).sendMessage(message);
+                                        }    
+                            }
+                            break;
+                        case Message.UPLOAD_ACCEPT:
+                            for(int i = 0; i < ThreadHandler.serverThreads.size(); i++)
+                            {
+                                if(ThreadHandler.serverThreads.get(i).username.equals(message.recipient))
+                                        {
+                                            ThreadHandler.serverThreads.get(i).sendMessage(message);
+                                        }    
+                            }
+                            break;
+                        case Message.UPLOAD_DENY:
+                            for(int i = 0; i < ThreadHandler.serverThreads.size(); i++)
+                            {
+                                if(ThreadHandler.serverThreads.get(i).username.equals(message.recipient))
+                                        {
+                                            ThreadHandler.serverThreads.get(i).sendMessage(message);
+                                        }    
+                            }
+                            break;
+                       
                     }
                 }//End of try inside While Loop
                 catch(ClassNotFoundException ex)

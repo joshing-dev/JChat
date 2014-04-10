@@ -12,6 +12,8 @@ public class Message implements Serializable{
     public String username;
     public ArrayList<String> usernames;
     public byte[] fileData;
+    public long dataLength;
+    public int bytesSent;
     public final static int MESSAGE = 0,MESSAGE_ALL = 1, LOGON = 2, LOGOUT = 3, SERVER_SHUTDOWN = 4, UPLOAD_REQ = 5, UPLOAD_DENY = 6, UPLOAD_ACCEPT = 7, FILE = 8;
     /**
      * Creates a Message object to be sent over the stream. 
@@ -56,12 +58,27 @@ public class Message implements Serializable{
         this.type = type;
     }
     //Message.FILE
-    public Message(int type,String recipient, byte[] fileData, String username )
+    public Message(int type,String username, String recipient, byte[] fileData, int bytesSent)
+    {
+        this.type = type;
+        this.username = username;
+        this.recipient = recipient;
+        this.fileData = fileData;
+        this.bytesSent = bytesSent;
+        
+    }
+    //Message.UPLOAD_REQ
+    public Message(int type, String recipient, String content, long dataLength, String username)
     {
         this.type = type;
         this.recipient = recipient;
-        this.fileData = fileData;
+        this.content = content;
+        this.dataLength = dataLength;
         this.username = username;
+    }
+    public long getFileLength()
+    {
+        return dataLength;
     }
     public int getPosition()
     {
@@ -86,6 +103,6 @@ public class Message implements Serializable{
     @Override
     public String toString()
     {
-        return (username) + ": " + content;
+        return "[" +username + "] " + content;
     }
 }

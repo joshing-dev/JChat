@@ -1,0 +1,6 @@
+1. File Transfer(Needs bug testing)
+2. Different colors for users.
+3. Focus in text area.(Done)
+4. Change text area to JTextPane or similar.
+5. Append to text area that you are sending out a file.(Done)
+6. Cleanly cancel download or upload on exit and create a cancel button.
